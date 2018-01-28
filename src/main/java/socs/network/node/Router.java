@@ -266,9 +266,11 @@ public class Router {
 
         String neighborID = in.neighborID;
         for (int i = 0; i < ports.length; i++) {
-            if (this.ports[i].router2.simulatedIPAddress.equals(neighborID)) {
-                this.ports[i].router2.status = RouterStatus.INIT;
-                return true;
+            if (ports[i] != null) {
+                if (this.ports[i].router2.simulatedIPAddress.equals(neighborID)) {
+                    this.ports[i].router2.status = RouterStatus.INIT;
+                    return true;
+                }
             }
         }
 
@@ -279,10 +281,12 @@ public class Router {
 
         String neighborID = in.neighborID;
         for (int i = 0; i < ports.length; i++) {
-            if (this.ports[i].router2.simulatedIPAddress.equals(neighborID)
-                    && this.ports[i].router2.status == RouterStatus.INIT) {
-                this.ports[i].router2.status = RouterStatus.TWO_WAY;
-                return true;
+            if(ports[i] != null) {
+                if (this.ports[i].router2.simulatedIPAddress.equals(neighborID)
+                        && this.ports[i].router2.status == RouterStatus.INIT) {
+                    this.ports[i].router2.status = RouterStatus.TWO_WAY;
+                    return true;
+                }
             }
         }
         return false;
@@ -334,27 +338,32 @@ public class Router {
                         }
                     }
 
-                    SOSPFPacket outputMessage = new SOSPFPacket();
-                    outputMessage.sospfType = 0;
-                    outputMessage.srcProcessIP = r.rd.processIPAddress;
-                    outputMessage.srcProcessPort = r.rd.processPortNumber;
-                    outputMessage.neighborID = r.rd.simulatedIPAddress;
-                    out.writeObject(outputMessage);
 
-                    inputMessage = (SOSPFPacket) in.readObject();
-                    if (inputMessage.sospfType == 0) { //This is a HELLO message
-                        System.out.print("Received HELLO from : " + inputMessage.neighborID + "\n");
-                        neighbor_rd = findNeighbor((inputMessage));
-                        if (neighbor_rd == null) {
-                            System.out.print("Received a HELLO from a non-existing neighbor!" + "\n");
-                            //add neighbor
-                        } else {
-                            if (setTWOWAYstate(inputMessage)) {
-                                System.out.println("Set " + inputMessage.neighborID + " state to TWOWAY" + "\n");
+                        SOSPFPacket outputMessage = new SOSPFPacket();
+                        outputMessage.sospfType = 0;
+                        outputMessage.srcProcessIP = r.rd.processIPAddress;
+                        outputMessage.srcProcessPort = r.rd.processPortNumber;
+                        outputMessage.neighborID = r.rd.simulatedIPAddress;
+                        out.writeObject(outputMessage);
+
+                        inputMessage = (SOSPFPacket) in.readObject();
+                        if (inputMessage.sospfType == 0) { //This is a HELLO message
+                            System.out.print("Received HELLO from : " + inputMessage.neighborID + "\n");
+                            neighbor_rd = findNeighbor((inputMessage));
+                            if (neighbor_rd.equals(null)) {
+                                System.out.print("Received a HELLO from a non-existing neighbor!" + "\n");
+                                //add neighbor
+                            } else {
+                                if (setTWOWAYstate(inputMessage)) {
+                                    System.out.println("Set " + inputMessage.neighborID + " state to TWOWAY" + "\n");
+                                }
+                                else{
+                                    System.out.print("Already a TWOWAY neighbor" + "\n");
+                                }
                             }
                         }
                     }
-                }
+
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClassNotFoundException e) {
