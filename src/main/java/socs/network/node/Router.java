@@ -1,6 +1,4 @@
 package main.java.socs.network.node;
-
-import com.sun.deploy.util.SessionState;
 import main.java.socs.network.message.LSA;
 import main.java.socs.network.message.LinkDescription;
 import main.java.socs.network.message.SOSPFPacket;
@@ -260,7 +258,7 @@ public class Router {
                 }
             }
         }
-        System.out.print("No such neighbor lol");
+       // System.out.print("No such neighbor lol");
         return null;
     }
 
@@ -326,14 +324,13 @@ public class Router {
                 SOSPFPacket inputMessage = (SOSPFPacket) in.readObject();
 
                 if (inputMessage.sospfType == 0) { //This is a HELLO message
-                    System.out.print("Received HELLO from : " + inputMessage.neighborID);
+                    System.out.print("Received HELLO from : " + inputMessage.neighborID + "\n");
                     RouterDescription neighbor_rd = findNeighbor((inputMessage));
                     if (neighbor_rd == null) {
-                        System.out.print("Received a HELLO from a non-existing neighbor!");
+                        //System.out.print("Received a HELLO from a non-existing neighbor!" + "\n");
                         addNeighbor(inputMessage.srcProcessIP, inputMessage.srcProcessPort, inputMessage.neighborID);
-                    } else {
                         if (setINITstate(inputMessage)) {
-                            System.out.println("Set " + inputMessage.neighborID + " state to INIT");
+                            System.out.println("Set " + inputMessage.neighborID + " state to INIT" + "\n");
                         }
                     }
 
@@ -346,14 +343,14 @@ public class Router {
 
                     inputMessage = (SOSPFPacket) in.readObject();
                     if (inputMessage.sospfType == 0) { //This is a HELLO message
-                        System.out.print("Received HELLO from : " + inputMessage.neighborID);
+                        System.out.print("Received HELLO from : " + inputMessage.neighborID + "\n");
                         neighbor_rd = findNeighbor((inputMessage));
                         if (neighbor_rd == null) {
-                            System.out.print("Received a HELLO from a non-existing neighbor!");
+                            System.out.print("Received a HELLO from a non-existing neighbor!" + "\n");
                             //add neighbor
                         } else {
                             if (setTWOWAYstate(inputMessage)) {
-                                System.out.println("Set " + inputMessage.neighborID + " state to TWOWAY");
+                                System.out.println("Set " + inputMessage.neighborID + " state to TWOWAY" + "\n");
                             }
                         }
                     }
@@ -394,22 +391,21 @@ public class Router {
             ObjectInputStream in = null;
             ObjectOutputStream out = null;
             Socket client = null;
-            System.out.print("Here!!!");
             try {
                 client = new Socket(serverIP, port);
                 out = new ObjectOutputStream(client.getOutputStream());
                 out.writeObject(this.packet);
-                System.out.print("successfully forward the HELLO");
+                System.out.print("successfully forward the HELLO" + "\n");
 
                 if (this.packet.sospfType == 0) {
                     in = new ObjectInputStream(client.getInputStream());
                     SOSPFPacket inputMessage = (SOSPFPacket) in.readObject();
 
                     if (inputMessage.sospfType == 0) {
-                        System.out.print("Received HELLO from : " + inputMessage.neighborID);
+                        System.out.print("Received HELLO from : " + inputMessage.neighborID + "\n");
                         if (setINITstate(inputMessage)) {
                             if (setTWOWAYstate(inputMessage))
-                                System.out.println("Set " + inputMessage.neighborID + " state to TWO_WAY");
+                                System.out.println("Set " + inputMessage.neighborID + " state to TWO_WAY" + "\n");
                         }
                     }
 
