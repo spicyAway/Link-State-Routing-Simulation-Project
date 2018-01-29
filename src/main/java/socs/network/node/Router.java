@@ -165,7 +165,7 @@ public class Router {
      * output the neighbors of the routers
      */
     private void processNeighbors() {
-        System.out.print("Neighbours are: ");
+        System.out.print("My neighbours are: " + "\n");
         for (int i = 0; i < ports.length; i++) {
             if (ports[i] != null && ports[i].router2.status != null) {
                 RouterDescription neighbour = ports[i].router2;
@@ -333,11 +333,10 @@ public class Router {
                     if (neighbor_rd == null) {
                         //System.out.print("Received a HELLO from a non-existing neighbor!" + "\n");
                         addNeighbor(inputMessage.srcProcessIP, inputMessage.srcProcessPort, inputMessage.neighborID);
+                    }
                         if (setINITstate(inputMessage)) {
                             System.out.println("Set " + inputMessage.neighborID + " state to INIT" + "\n");
                         }
-                    }
-
 
                         SOSPFPacket outputMessage = new SOSPFPacket();
                         outputMessage.sospfType = 0;
