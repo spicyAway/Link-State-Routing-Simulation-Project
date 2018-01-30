@@ -411,10 +411,10 @@ public class Router {
                         		ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
                         		System.out.println("set " + inputMessage.neighborID + " state to TWO_WAY" + ";\n");
                         }
-                        
-                        //send another HELLO message
-                        out.writeObject(packet);
                     }
+                    
+                    //send another HELLO message
+                    out.writeObject(packet);
 
                 }
             } catch (UnknownHostException e) {
