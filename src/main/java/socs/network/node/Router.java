@@ -1,40 +1,38 @@
 package main.java.socs.network.node;
-import main.java.socs.network.message.LSA;
-import main.java.socs.network.message.LinkDescription;
+
+//import main.java.socs.network.message.LSA;
+//import main.java.socs.network.message.LinkDescription;
 import main.java.socs.network.message.SOSPFPacket;
 import main.java.socs.network.util.Configuration;
 
 import java.net.*;
 import java.io.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.Vector;
-
+//import java.io.BufferedReader;
+//import java.io.InputStreamReader;
 
 public class Router {
 
     protected LinkStateDatabase lsd;
 
-    RouterDescription rd = new RouterDescription();
+    RouterDescription rd;
 
     //assuming that all routers are with 4 ports
     Link[] ports = new Link[4];
 
     public Router(Configuration config) {
-        rd.simulatedIPAddress = config.getString("socs.network.router.ip");
-        rd.processPortNumber = config.getShort("socs.network.router.processPort");
-        rd.processIPAddress = config.getString("socs.network.router.processIP");
+    		rd = new RouterDescription(config.getString("socs.network.router.processIP"),
+    				config.getShort("socs.network.router.processPort"),
+    				config.getString("socs.network.router.ip"));
         lsd = new LinkStateDatabase(rd);
 
         System.out.println("My simulated IP address is: " + rd.simulatedIPAddress);
+        
+        //start server socket
         int port = rd.processPortNumber;
         try {
-            new Thread(new routerServerSocket(port, this)).start();
+            new Thread(new RouterServerSocket(port, this)).start();
         } catch (IOException e) {
-            System.out.print("Start router server socket failed!");
+            System.out.print("Starting router server socket failed!");
         }
     }
 
@@ -61,42 +59,32 @@ public class Router {
 
     /**
      * attach the link to the remote router, which is identified by the given simulated ip;
-     * to establish the connection via socket, you need to indentify the process IP and process Port;
+     * to establish the connection via socket, you need to identify the process IP and process Port;
      * additionally, weight is the cost to transmitting data through the link
      * <p/>
      * NOTE: this command should not trigger link database synchronization
      */
     private void processAttach(String processIP, short processPort,
                                String simulatedIP, short weight) {
-        int i = 0;
-        while (i < ports.length) {
-            if (ports[i] == null) {
-                RouterDescription routerNeedToConnect = new RouterDescription(processIP, processPort, simulatedIP);
-                Link establishedLink = new Link(this.rd, routerNeedToConnect);
-                ports[i] = establishedLink;
-
-                LinkDescription establishedLinkDescription = new LinkDescription(this.rd.simulatedIPAddress, i, weight);
-                LSA newLSA = lsd._store.get(this.rd.simulatedIPAddress);
-                newLSA.lsaSeqNumber++;
-                newLSA.links.add(establishedLinkDescription);
-
-                break;
-            }
-            i++;
-        }
-
-        if (i == ports.length) {
-            System.out.print("All the ports are fully connected. Failed to attach.");
-        }
+    	
+    		addRouterToPorts(processIP, processPort, simulatedIP);
+    	
+    		/*int connectedPort = addRouterToPorts(processIP, processPort, simulatedIP);
+    		if (connectedPort != -1) {
+	        LinkDescription establishedLinkDescription = new LinkDescription(this.rd.simulatedIPAddress, connectedPort, weight);
+	        LSA newLSA = lsd._store.get(this.rd.simulatedIPAddress);
+	        newLSA.lsaSeqNumber++;
+	        newLSA.links.add(establishedLinkDescription);
+    		}*/
     }
 
- /* private void LDSysnchronization(int linkNumber, short weight){
+	/*private void LDSysnchronization(int linkNumber, short weight){
       LinkDescription establishedLinkDescription = new LinkDescription(this.rd.simulatedIPAddress, linkNumber, weight);
       LSA newLSA = lsd._store.get(this.rd.simulatedIPAddress);
       newLSA.lsaSeqNumber++;
       newLSA.links.add(establishedLinkDescription);
       this.lsd._store.put(newLSA.linkStateID, newLSA);
-  }*/
+	}*/
 
     /**
      * broadcast Hello to neighbors
@@ -104,23 +92,22 @@ public class Router {
     private void processStart() {
         for (int i = 0; i < ports.length; i++) {
             if (ports[i] != null) {
+            		//create HELLO message
                 SOSPFPacket newPacket = new SOSPFPacket();
                 newPacket.sospfType = 0;
                 newPacket.srcProcessIP = this.rd.processIPAddress;
                 newPacket.srcProcessPort = this.rd.processPortNumber;
                 newPacket.neighborID = this.rd.simulatedIPAddress;
 
-                String server = ports[i].router2.processIPAddress;
-                int port = ports[i].router2.processPortNumber;
-                new Thread(new Client(server, port, newPacket)).run();
+                String processIP = ports[i].router2.processIPAddress;
+                int processPort = ports[i].router2.processPortNumber;
+                new Thread(new Client(processIP, processPort, newPacket)).run();
             }
 
         }
-        //LSAUPDATE(null);
-
     }
 
-    public void LSAUPDATE(String initializer) {
+    /*public void LSAUPDATE(String initializer) {
         for (int i = 0; i < ports.length; i++) {
             if (ports[i] != null) {
                 if (ports[i].router2.simulatedIPAddress != initializer) {
@@ -143,12 +130,12 @@ public class Router {
                 }
             }
         }
-    }
+    }*/
 
 
     /**
      * attach the link to the remote router, which is identified by the given simulated ip;
-     * to establish the connection via socket, you need to indentify the process IP and process Port;
+     * to establish the connection via socket, you need to identify the process IP and process Port;
      * additionally, weight is the cost to transmitting data through the link
      * <p/>
      * This command does trigger the link database synchronization
@@ -223,98 +210,91 @@ public class Router {
             e.printStackTrace();
         }
     }
-
-    class routerServerSocket implements Runnable {
+    
+    /**
+     * multi-threaded router socket server
+     */
+    class RouterServerSocket implements Runnable {
 
         private ServerSocket serverSocket;
         Router router;
 
-        public routerServerSocket(int port, Router r) throws IOException {
-            serverSocket = new ServerSocket(port);
-            router = r;
-            System.out.println("Opened a server socket with IP: " + serverSocket.getInetAddress() + ":" + serverSocket.getLocalPort());
+        public RouterServerSocket(int portNumber, Router router) throws IOException {
+            serverSocket = new ServerSocket(portNumber);
+            this.router = router;
+            System.out.println("Opened server socket with IP: " + serverSocket.getInetAddress() + ":" + serverSocket.getLocalPort());
         }
 
         public void run() {
             while (true) {
-                Socket clientSocket = null;
                 try {
-                    clientSocket = serverSocket.accept();
+                		//accept incoming connections
+                		Socket clientSocket = serverSocket.accept();
+                		// start service thread
+                		ClientServiceThread clientThread = new ClientServiceThread(clientSocket, router);
+                		clientThread.start();
                 } catch (IOException e) {
                     System.out.print("Something wrong with the accept() function!");
                 }
-                ClientServiceThread cliThread = new ClientServiceThread(clientSocket, router);
-                cliThread.start();
             }
         }
     }
-
-    public RouterDescription findNeighbor(SOSPFPacket in) {
-        String neighborID = in.neighborID;
-        for (int i = 0; i < ports.length; i++) {
+    
+    /**
+     * find the port number that the specified router is attached to
+     * @return the port number, -1 if no such port exists
+     */
+    public int findNeighborPort(String simulatedIP) {
+	    	for (int i = 0; i < ports.length; i++) {
             if(this.ports[i] != null) {
-                if (this.ports[i].router2.simulatedIPAddress.equals(neighborID)) {
-                    return this.ports[i].router2;
+                if (this.ports[i].router2.simulatedIPAddress.equals(simulatedIP)) {
+                    return i;
                 }
             }
         }
-       // System.out.print("No such neighbor lol");
-        return null;
+    		return -1;
     }
+    
+    /**
+     * attach specified router to an empty port
+     * @return the port number the router has been attached to, -1 if attach has failed
+     */
+    public int addRouterToPorts(String processIP, short processPort, String simulatedIP) {
+    		
+    		if (rd.simulatedIPAddress.equals(simulatedIP)) {
+    			System.out.print("Cannot attach to self.\n");
+    			return -1;
+    		}
+    		if (findNeighborPort(simulatedIP) != -1) {
+    			System.out.print("Router has already been attached.\n");
+    			return -1;
+    		}
+    		
+    		//find an empty port
+		int i = 0;
+	    while (i < ports.length && ports[i] != null) {
+	    		i++;
+	    }
+	
+	    if (i == ports.length) {
+	        System.out.print("No empty ports. Attach failed.\n");
+	        return -1;
+	    } else {
+	    		//attach router to the empty port
+	        	RouterDescription routerNeedToConnect = new RouterDescription(processIP, processPort, simulatedIP);
+	        ports[i] = new Link(this.rd, routerNeedToConnect);
+	        return i;
+	    }
 
-    public boolean setINITstate(SOSPFPacket in) {
-
-        String neighborID = in.neighborID;
-        for (int i = 0; i < ports.length; i++) {
-            if (ports[i] != null) {
-                if (this.ports[i].router2.simulatedIPAddress.equals(neighborID)) {
-                    this.ports[i].router2.status = RouterStatus.INIT;
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
-
-    public boolean setTWOWAYstate(SOSPFPacket in) {
-
-        String neighborID = in.neighborID;
-        for (int i = 0; i < ports.length; i++) {
-            if(ports[i] != null) {
-                if (this.ports[i].router2.simulatedIPAddress.equals(neighborID)
-                        && this.ports[i].router2.status == RouterStatus.INIT) {
-                    this.ports[i].router2.status = RouterStatus.TWO_WAY;
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public void addNeighbor(String processIP, short processPort, String simulatedIP) {
-        short i = 0;
-        for (i = 0; i < ports.length; i++) {
-            if (ports[i] == null) {
-                RouterDescription remoteRouterDescription=new RouterDescription();
-                remoteRouterDescription.simulatedIPAddress=simulatedIP;
-                remoteRouterDescription.processIPAddress=processIP;
-                remoteRouterDescription.processPortNumber=processPort;
-                remoteRouterDescription.status=RouterStatus.INIT;
-                ports[i]=new Link(this.rd,remoteRouterDescription);
-                break;
-            }
-        }
-    }
-
 
     class ClientServiceThread extends Thread {
         Socket myClientSocket;
-        Router r;
+        Router router;
 
         ClientServiceThread(Socket s, Router router) {
             myClientSocket = s;
-            r = router;
+            this.router = router;
         }
 
         public void run() {
@@ -325,49 +305,58 @@ public class Router {
             try {
                 in = new ObjectInputStream(myClientSocket.getInputStream());
                 out = new ObjectOutputStream(myClientSocket.getOutputStream());
+                
                 SOSPFPacket inputMessage = (SOSPFPacket) in.readObject();
-
-                if (inputMessage.sospfType == 0) { //This is a HELLO message
-                    System.out.print("Received HELLO from : " + inputMessage.neighborID + "\n");
-                    RouterDescription neighbor_rd = findNeighbor((inputMessage));
-                    if (neighbor_rd == null) {
-                        //System.out.print("Received a HELLO from a non-existing neighbor!" + "\n");
-                        addNeighbor(inputMessage.srcProcessIP, inputMessage.srcProcessPort, inputMessage.neighborID);
+                
+                if (inputMessage.sospfType == 0) { 
+                		//received HELLO message
+                    System.out.print("received HELLO from " + inputMessage.neighborID + ";\n");
+                    
+                    if (findNeighborPort(inputMessage.neighborID) == -1) {
+                    		//messaging router is not a neighbor, add it
+                    		addRouterToPorts(inputMessage.srcProcessIP, inputMessage.srcProcessPort, inputMessage.neighborID);
+                    	}
+                    
+                    int neighborPort = findNeighborPort(inputMessage.neighborID);
+                    
+                    if (neighborPort != -1) {
+                    		//set messaging router status to INIT
+                    		ports[neighborPort].router2.status = RouterStatus.INIT;
+                    		System.out.println("set " + inputMessage.neighborID + " state to INIT;" + "\n");
+                    		
+                    		//send HELLO message to messaging router
+                    		SOSPFPacket outputMessage = new SOSPFPacket();
+                    		outputMessage.sospfType = 0;
+                    		outputMessage.srcProcessIP = router.rd.processIPAddress;
+                    		outputMessage.srcProcessPort = router.rd.processPortNumber;
+                    		outputMessage.neighborID = router.rd.simulatedIPAddress;
+                    		out.writeObject(outputMessage);
+                    		
+                    		inputMessage = (SOSPFPacket) in.readObject();
+                    		
+                    		if (inputMessage.sospfType == 0) {
+                    			//received another HELLO message
+                    			System.out.print("received HELLO from " + inputMessage.neighborID + ";\n");
+                    			neighborPort = findNeighborPort(inputMessage.neighborID);
+                    			if (neighborPort != -1) {
+                    				//set status to TWO_WAY
+                    				RouterStatus neighborStatus = ports[neighborPort].router2.status;
+                    				if (neighborStatus == RouterStatus.INIT) {
+                    					ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
+                    					System.out.println("set " + inputMessage.neighborID + " state to TWOWAY;" + "\n");
+                    				} else if (neighborStatus == RouterStatus.TWO_WAY) {
+                    					System.out.print("Already a TWOWAY neighbor with" + inputMessage.neighborID + ";\n");
+                    				}
+                    			}
+                    		}
                     }
-                        if (setINITstate(inputMessage)) {
-                            System.out.println("Set " + inputMessage.neighborID + " state to INIT" + "\n");
-                        }
-
-                        SOSPFPacket outputMessage = new SOSPFPacket();
-                        outputMessage.sospfType = 0;
-                        outputMessage.srcProcessIP = r.rd.processIPAddress;
-                        outputMessage.srcProcessPort = r.rd.processPortNumber;
-                        outputMessage.neighborID = r.rd.simulatedIPAddress;
-                        out.writeObject(outputMessage);
-
-                        inputMessage = (SOSPFPacket) in.readObject();
-                        if (inputMessage.sospfType == 0) { //This is a HELLO message
-                            System.out.print("Received HELLO from : " + inputMessage.neighborID + "\n");
-                            neighbor_rd = findNeighbor((inputMessage));
-                            if (neighbor_rd.equals(null)) {
-                                System.out.print("Received a HELLO from a non-existing neighbor!" + "\n");
-                                //add neighbor
-                            } else {
-                                if (setTWOWAYstate(inputMessage)) {
-                                    System.out.println("Set " + inputMessage.neighborID + " state to TWOWAY" + "\n");
-                                }
-                                else{
-                                    System.out.print("Already a TWOWAY neighbor" + "\n");
-                                }
-                            }
-                        }
-                    }
-
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
+            		//close thread
                 try {
                     in.close();
                     out.close();
@@ -385,13 +374,13 @@ public class Router {
 
 
     class Client implements Runnable {
-        private String serverIP;
-        private int port;
+        private String processIP;
+        private int processPort;
         private SOSPFPacket packet;
 
-        public Client(String serverIP, int port, SOSPFPacket packet) {
-            this.serverIP = serverIP;
-            this.port = port;
+        public Client(String processIP, int processPort, SOSPFPacket packet) {
+            this.processIP = processIP;
+            this.processPort = processPort;
             this.packet = packet;
         }
 
@@ -400,24 +389,32 @@ public class Router {
             ObjectOutputStream out = null;
             Socket client = null;
             try {
-                client = new Socket(serverIP, port);
+                client = new Socket(processIP, processPort);
                 out = new ObjectOutputStream(client.getOutputStream());
                 out.writeObject(this.packet);
-                System.out.print("successfully forward the HELLO" + "\n");
 
                 if (this.packet.sospfType == 0) {
+                		//sent HELLO message
+                		System.out.print("successfully forwarded the HELLO" + ";\n");
+                		
                     in = new ObjectInputStream(client.getInputStream());
                     SOSPFPacket inputMessage = (SOSPFPacket) in.readObject();
-
                     if (inputMessage.sospfType == 0) {
-                        System.out.print("Received HELLO from : " + inputMessage.neighborID + "\n");
-                        if (setINITstate(inputMessage)) {
-                            if (setTWOWAYstate(inputMessage))
-                                System.out.println("Set " + inputMessage.neighborID + " state to TWO_WAY" + "\n");
+                    		//received HELLO message
+                        System.out.print("received HELLO from " + inputMessage.neighborID + ";\n");
+                        
+                        //set status to TWO_WAY
+                        int neighborPort = findNeighborPort(inputMessage.neighborID);
+                        if (ports[neighborPort].router2.status == RouterStatus.TWO_WAY) {
+                        		System.out.print("Already a TWOWAY neighbor with" + inputMessage.neighborID + ";\n");
+                        } else {
+                        		ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
+                        		System.out.println("set " + inputMessage.neighborID + " state to TWO_WAY" + ";\n");
                         }
+                        
+                        //send another HELLO message
+                        out.writeObject(packet);
                     }
-
-                    out.writeObject(packet);
 
                 }
             } catch (UnknownHostException e) {
