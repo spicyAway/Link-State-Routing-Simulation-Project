@@ -345,7 +345,7 @@ public class Router {
                     					ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
                     					System.out.println("set " + inputMessage.neighborID + " state to TWOWAY;" + "\n");
                     				} else if (neighborStatus == RouterStatus.TWO_WAY) {
-                    					System.out.print("Already a TWOWAY neighbor with" + inputMessage.neighborID + ";\n");
+                    					System.out.print("Already a TWOWAY neighbor with " + inputMessage.neighborID + ";\n");
                     				}
                     			}
                     		}
@@ -406,7 +406,7 @@ public class Router {
                         //set status to TWO_WAY
                         int neighborPort = findNeighborPort(inputMessage.neighborID);
                         if (ports[neighborPort].router2.status == RouterStatus.TWO_WAY) {
-                        		System.out.print("Already a TWOWAY neighbor with" + inputMessage.neighborID + ";\n");
+                        		System.out.print("Already a TWOWAY neighbor with " + inputMessage.neighborID + ";\n");
                         } else {
                         		ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
                         		System.out.println("set " + inputMessage.neighborID + " state to TWO_WAY" + ";\n");
