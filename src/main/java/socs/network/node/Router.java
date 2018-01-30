@@ -425,10 +425,7 @@ public class Router {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
-<<<<<<< HEAD
-=======
             		//close client socket
->>>>>>> fe3f0717a07ad17535adc48d541b2db22100c4ad
                 try {
                     in.close();
                     out.close();
