@@ -30,7 +30,7 @@ public class Router {
         //start server socket
         int port = rd.processPortNumber;
         try {
-            new Thread(new RouterServerSocket(port, this)).start();
+            new Thread(new Server(port, this)).start();
         } catch (IOException e) {
             System.out.print("Starting router server socket failed!");
         }
@@ -101,7 +101,7 @@ public class Router {
 
                 String processIP = ports[i].router2.processIPAddress;
                 int processPort = ports[i].router2.processPortNumber;
-                new Thread(new Client(processIP, processPort, newPacket)).run();
+                new Thread(new Client(processIP, processPort, newPacket)).start();
             }
 
         }
@@ -214,12 +214,12 @@ public class Router {
     /**
      * multi-threaded router socket server
      */
-    class RouterServerSocket implements Runnable {
+    class Server implements Runnable {
 
         private ServerSocket serverSocket;
         Router router;
 
-        public RouterServerSocket(int portNumber, Router router) throws IOException {
+        public Server(int portNumber, Router router) throws IOException {
             serverSocket = new ServerSocket(portNumber);
             this.router = router;
             System.out.println("Opened server socket with IP: " + serverSocket.getInetAddress() + ":" + serverSocket.getLocalPort());
@@ -230,7 +230,7 @@ public class Router {
                 try {
                 		//accept incoming connections
                 		Socket clientSocket = serverSocket.accept();
-                		// start service thread
+                		//start client service thread
                 		ClientServiceThread clientThread = new ClientServiceThread(clientSocket, router);
                 		clientThread.start();
                 } catch (IOException e) {
@@ -356,7 +356,7 @@ public class Router {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
-            		//close thread
+            		//close client service thread
                 try {
                     in.close();
                     out.close();
@@ -424,7 +424,7 @@ public class Router {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
-
+            		//close client socket
                 try {
                     in.close();
                     out.close();
