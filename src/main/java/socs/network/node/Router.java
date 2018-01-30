@@ -92,7 +92,7 @@ public class Router {
     private void processStart() {
         for (int i = 0; i < ports.length; i++) {
             if (ports[i] != null) {
-            		//create HELLO message
+                //create HELLO message
                 SOSPFPacket newPacket = new SOSPFPacket();
                 newPacket.sospfType = 0;
                 newPacket.srcProcessIP = this.rd.processIPAddress;
@@ -156,8 +156,9 @@ public class Router {
         for (int i = 0; i < ports.length; i++) {
             if (ports[i] != null && ports[i].router2.status != null) {
                 RouterDescription neighbour = ports[i].router2;
-                System.out.print(neighbour.simulatedIPAddress + "\n");
-
+                if(neighbour.status == RouterStatus.TWO_WAY) {
+                    System.out.print(neighbour.simulatedIPAddress + "\n");
+                }
             }
         }
     }
@@ -405,13 +406,11 @@ public class Router {
                         
                         //set status to TWO_WAY
                         int neighborPort = findNeighborPort(inputMessage.neighborID);
-                        if (ports[neighborPort].router2.status == RouterStatus.TWO_WAY) {
+                        /*if (ports[neighborPort].router2.status == RouterStatus.TWO_WAY) {
                         		System.out.print("Already a TWOWAY neighbor with " + inputMessage.neighborID + ";\n");
-                        } else {
+                        } else {*/
                         		ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
                         		System.out.println("set " + inputMessage.neighborID + " state to TWO_WAY" + ";\n");
-                        }
-
                     }
                     
                     //send another HELLO message
