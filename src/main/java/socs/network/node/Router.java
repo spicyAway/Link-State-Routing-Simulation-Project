@@ -415,6 +415,7 @@ public class Router {
                             if (setTWOWAYstate(inputMessage))
                                 System.out.println("Set " + inputMessage.neighborID + " state to TWO_WAY" + "\n");
                         }
+
                     }
 
                     out.writeObject(packet);
@@ -427,7 +428,6 @@ public class Router {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
-
                 try {
                     in.close();
                     out.close();
