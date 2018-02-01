@@ -98,6 +98,7 @@ public class Router {
                 newPacket.srcProcessIP = this.rd.processIPAddress;
                 newPacket.srcProcessPort = this.rd.processPortNumber;
                 newPacket.neighborID = this.rd.simulatedIPAddress;
+                newPacket.routerID = ports[i].router2.simulatedIPAddress;
 
                 String processIP = ports[i].router2.processIPAddress;
                 int processPort = ports[i].router2.processPortNumber;
@@ -418,6 +419,8 @@ public class Router {
                 }
             } catch (EOFException e) {
             		System.out.print("No message back!");
+            		int port = findRouterPort(packet.routerID);
+            		ports[port] = null;
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             } catch (IOException e) {
