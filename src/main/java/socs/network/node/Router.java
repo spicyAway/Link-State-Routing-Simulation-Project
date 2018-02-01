@@ -245,7 +245,7 @@ public class Router {
      * find the port number that the specified router is attached to
      * @return the port number, -1 if no such port exists
      */
-    public int findNeighborPort(String simulatedIP) {
+    public int findRouterPort(String simulatedIP) {
 	    	for (int i = 0; i < ports.length; i++) {
             if(this.ports[i] != null) {
                 if (this.ports[i].router2.simulatedIPAddress.equals(simulatedIP)) {
@@ -266,7 +266,7 @@ public class Router {
     			System.out.print("Cannot attach to self.\n");
     			return -1;
     		}
-    		if (findNeighborPort(simulatedIP) != -1) {
+    		if (findRouterPort(simulatedIP) != -1) {
     			System.out.print("Router has already been attached.\n");
     			return -1;
     		}
@@ -313,16 +313,16 @@ public class Router {
                 		//received HELLO message
                     System.out.print("received HELLO from " + inputMessage.neighborID + ";\n");
                     
-                    if (findNeighborPort(inputMessage.neighborID) == -1) {
-                    		//messaging router is not a neighbor, add it
+                    if (findRouterPort(inputMessage.neighborID) == -1) {
+                    		//messaging router is not already attached to a port, add it
                     		addRouterToPorts(inputMessage.srcProcessIP, inputMessage.srcProcessPort, inputMessage.neighborID);
                     	}
                     
-                    int neighborPort = findNeighborPort(inputMessage.neighborID);
+                    int routerPort = findRouterPort(inputMessage.neighborID);
                     
-                    if (neighborPort != -1) {
+                    if (routerPort != -1) {
                     		//set messaging router status to INIT
-                    		ports[neighborPort].router2.status = RouterStatus.INIT;
+                    		ports[routerPort].router2.status = RouterStatus.INIT;
                     		System.out.println("set " + inputMessage.neighborID + " state to INIT;" + "\n");
                     		
                     		//send HELLO message to messaging router
@@ -338,12 +338,12 @@ public class Router {
                     		if (inputMessage.sospfType == 0) {
                     			//received another HELLO message
                     			System.out.print("received HELLO from " + inputMessage.neighborID + ";\n");
-                    			neighborPort = findNeighborPort(inputMessage.neighborID);
-                    			if (neighborPort != -1) {
+                    			routerPort = findRouterPort(inputMessage.neighborID);
+                    			if (routerPort != -1) {
                     				//set status to TWO_WAY
-                    				RouterStatus neighborStatus = ports[neighborPort].router2.status;
+                    				RouterStatus neighborStatus = ports[routerPort].router2.status;
                     				if (neighborStatus == RouterStatus.INIT) {
-                    					ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
+                    					ports[routerPort].router2.status = RouterStatus.TWO_WAY;
                     					System.out.println("set " + inputMessage.neighborID + " state to TWOWAY;" + "\n");
                     				} else if (neighborStatus == RouterStatus.TWO_WAY) {
                     					System.out.print("Already a TWOWAY neighbor with " + inputMessage.neighborID + ";\n");
@@ -405,7 +405,7 @@ public class Router {
                         System.out.print("received HELLO from " + inputMessage.neighborID + ";\n");
                         
                         //set status to TWO_WAY
-                        int neighborPort = findNeighborPort(inputMessage.neighborID);
+                        int neighborPort = findRouterPort(inputMessage.neighborID);
                         /*if (ports[neighborPort].router2.status == RouterStatus.TWO_WAY) {
                         		System.out.print("Already a TWOWAY neighbor with " + inputMessage.neighborID + ";\n");
                         } else {*/
