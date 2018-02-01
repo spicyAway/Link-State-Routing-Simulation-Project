@@ -396,9 +396,9 @@ public class Router {
 
                 if (this.packet.sospfType == 0) {
                 		//sent HELLO message
-                		System.out.print("successfully forwarded the HELLO" + ";\n");
+                		//System.out.print("successfully forwarded the HELLO" + ";\n");
                 		
-                    in = new ObjectInputStream(client.getInputStream());
+            			in = new ObjectInputStream(client.getInputStream());
                     SOSPFPacket inputMessage = (SOSPFPacket) in.readObject();
                     if (inputMessage.sospfType == 0) {
                     		//received HELLO message
@@ -412,17 +412,18 @@ public class Router {
                     		ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
                     		System.out.println("set " + inputMessage.neighborID + " state to TWO_WAY" + ";\n");
                     }
-                    
-                    //send another HELLO message
-                    out.writeObject(packet);
-
+	                    
+					//send another HELLO message
+					out.writeObject(packet);
                 }
+            } catch (EOFException e) {
+            		System.out.print("No message back!");
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                e.printStackTrace();   	
             } finally {
             		//close client socket
                 try {
