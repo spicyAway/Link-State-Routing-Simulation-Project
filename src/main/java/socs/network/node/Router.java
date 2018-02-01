@@ -409,8 +409,8 @@ public class Router {
                         /*if (ports[neighborPort].router2.status == RouterStatus.TWO_WAY) {
                         		System.out.print("Already a TWOWAY neighbor with " + inputMessage.neighborID + ";\n");
                         } else {*/
-                        		ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
-                        		System.out.println("set " + inputMessage.neighborID + " state to TWO_WAY" + ";\n");
+                    		ports[neighborPort].router2.status = RouterStatus.TWO_WAY;
+                    		System.out.println("set " + inputMessage.neighborID + " state to TWO_WAY" + ";\n");
                     }
                     
                     //send another HELLO message
