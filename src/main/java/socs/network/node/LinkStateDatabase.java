@@ -4,11 +4,13 @@ import main.java.socs.network.message.LSA;
 import main.java.socs.network.message.LinkDescription;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class LinkStateDatabase {
 
   //linkID => LSAInstance
   HashMap<String, LSA> _store = new HashMap<String, LSA>();
+  Graph graph = new Graph();
 
   private RouterDescription rd = null;
 
@@ -53,4 +55,27 @@ public class LinkStateDatabase {
     return sb.toString();
   }
 
+  public void constructGraph(){
+
+    Graph g = new Graph();
+    for (Map.Entry<String, LSA> entry : this._store.entrySet()) {
+
+        String linkSID = entry.getKey();
+        LSA lsa = entry.getValue();
+        Node n = new Node(linkSID);
+
+        for (int i = 0; i < lsa.links.size(); i++) {
+            LinkDescription tempLink = lsa.links.get(i);
+            Node neighbor = new Node(tempLink.linkID);
+            if (neighbor.getName() != n.getName()) {
+                n.addAdjacent(neighbor, tempLink.tosMetrics);
+            }
+        }
+        g.addNode(n);
+    }
+    this.graph = g;
+    this.graph.printGraph();
+  }
 }
+
+

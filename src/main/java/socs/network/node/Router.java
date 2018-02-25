@@ -398,6 +398,7 @@ public class Router {
                 			if (lsa == null || lsa.lsaSeqNumber < receivedLSA.lsaSeqNumber) {
             					//update database with newer LSA
             					lsd._store.put(receivedLSA.linkStateID, receivedLSA);
+            					lsd.constructGraph();
             					
             					//update all neighbors except neighbor that sent the LSP
             					sendLSP(neighborPort);
