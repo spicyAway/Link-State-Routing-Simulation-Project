@@ -10,6 +10,7 @@ import java.util.HashMap;
 public class Node {
 
     private String name;
+    private int distance = Integer.MAX_VALUE;
     private List<Node> shortestPath = new LinkedList<>();
     Map<Node, Integer> adjacentNodes = new HashMap<>();
 
@@ -33,5 +34,22 @@ public class Node {
             System.out.print("Neighbor:" + keyNode.getName() + " " + value + "\n");
         }
     }
-
+    public void setDistance(int d){
+        this.distance = d;
+    }
+    public int getDistance(){
+        return this.distance;
+    }
+    public Map<Node, Integer> getAdjacentNodes(){
+        return this.adjacentNodes;
+    }
+    public List<Node> getShortestPath(){
+        return shortestPath;
+    }
+    public void setShortestPath(List<Node> path){
+        this.shortestPath = path;
+    }
 }
+
+
+

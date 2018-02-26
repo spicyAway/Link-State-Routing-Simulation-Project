@@ -4,7 +4,9 @@ import main.java.socs.network.message.LSA;
 import main.java.socs.network.message.LinkDescription;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.List;
 
 public class LinkStateDatabase {
 
@@ -25,7 +27,26 @@ public class LinkStateDatabase {
    */
   String getShortestPath(String destinationIP) {
     //TODO: fill the implementation here
+
+      Node source = this.graph.findNode(this.rd.simulatedIPAddress);
+      Node dest = this.graph.findNode(destinationIP);
+      if(source == null || dest == null){
+          System.out.print("Source node or Destination node is not inside the graph!");
+      }else{
+          this.graph = Graph.calculateShortestPath(this.graph, source);
+          dest = this.graph.findNode(destinationIP);
+          List<Node> path = dest.getShortestPath();
+          String shortestPath = pathToString(path);
+          return shortestPath;
+      }
     return null;
+  }
+  private String pathToString(List<Node> path){
+      String Path = "";
+      for(Node node : path){
+          Path += node.getName() + " -> ";
+      }
+      return Path;
   }
 
   //initialize the linkstate database by adding an entry about the router itself
