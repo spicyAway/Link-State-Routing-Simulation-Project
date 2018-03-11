@@ -19,20 +19,26 @@ public class Graph {
     public void printGraph(){
         System.out.print("Printing Lastest Graph: " + "\n");
         for (Node n : nodes) {
-            System.out.println(n.getName());
+            System.out.println("Node: " + n.getName() + "\n");
             n.printNeighborNodes();
         }
     }
+    
     public Node findNode(String Name){
         for(Node node : this.nodes){
-            if(node.getName() == Name){
+            if(node.getName().equals(Name)){
                 return node;
             }
         }
         return null;
     }
 
-    public static Graph calculateShortestPath(Graph graph, Node source){
+    /**
+     * calculate shortest path to each node from the source node using Dijkstra's 
+     * shortest path algorithm.
+     */
+    public void calculateShortestPath(Node src){
+    			Node source = findNode(src.getName());
             source.setDistance(0);
             Set<Node> settledNodes = new HashSet<>();
             Set<Node> unsettledNodes = new HashSet<>();
@@ -40,22 +46,24 @@ public class Graph {
 
             while(unsettledNodes.size() != 0){
                 Node currentNode = getLowestDistanceNode(unsettledNodes);
+                //System.out.println("current node: " + currentNode.getName());
                 unsettledNodes.remove(currentNode);
                 for(Map.Entry<Node, Integer> adjacentNodePair : currentNode.getAdjacentNodes().entrySet()){
                     Node adjacentNode = adjacentNodePair.getKey();
                     int distance = adjacentNodePair.getValue();
-
-                    if(!unsettledNodes.contains(adjacentNode)){
+                    //System.out.println("neighbor node: " + adjacentNode.getName() + " " + distance);
+                    if(!settledNodes.contains(adjacentNode)){
                         calculateMinimumDistance(adjacentNode, distance, currentNode);
+                        //System.out.println("add to unsettled: " + adjacentNode.getName());
                         unsettledNodes.add(adjacentNode);
                     }
                 }
                 settledNodes.add(currentNode);
             }
-        return graph;
+        //return graph;
     }
 
-    private static Node getLowestDistanceNode (Set<Node> unsettledNodes){
+    private Node getLowestDistanceNode (Set<Node> unsettledNodes){
 
             Node lowestDistanceNode = null;
             int lowestDistance = Integer.MAX_VALUE;
@@ -70,13 +78,18 @@ public class Graph {
             return lowestDistanceNode;
     }
 
-    private static void calculateMinimumDistance(Node evaluationNode, int weight, Node currentNode){
+    private void calculateMinimumDistance(Node evaluationNode, int weight, Node currentNode){
         int totalDistance = currentNode.getDistance() + weight;
         if(totalDistance < evaluationNode.getDistance()){
             evaluationNode.setDistance(totalDistance);
-            LinkedList<Node> shortestPath = new LinkedList<>(evaluationNode.getShortestPath());
+            List<Node> shortestPath = new LinkedList<>(currentNode.getShortestPath());
+            List<Integer> shortestPathWeights = new LinkedList<>(currentNode.getShortestPathWeights());
+            //System.out.println(currentNode.getName() +"'s shortest path: " + currentNode.getDistance() + ", " + currentNode.toStringShortestPath());
             shortestPath.add(currentNode);
+            shortestPathWeights.add(weight);
             evaluationNode.setShortestPath(shortestPath);
+            evaluationNode.setShortestPathWeights(shortestPathWeights);
+            //System.out.println(evaluationNode.getName() +"'s shortest path: " + evaluationNode.getDistance() + ", " + evaluationNode.toStringShortestPath());
         }
     }
 

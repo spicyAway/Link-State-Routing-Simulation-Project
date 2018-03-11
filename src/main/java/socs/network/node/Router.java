@@ -45,7 +45,12 @@ public class Router {
      * @param destinationIP the ip adderss of the destination simulated router
      */
     private void processDetect(String destinationIP) {
-    		System.out.print(lsd.getShortestPath(destinationIP));
+    		String shortestPath = lsd.getShortestPath(destinationIP);
+    		if (shortestPath == null) {
+    			System.out.print("No path to " + destinationIP + ".\n");
+    		} else {
+    			System.out.print(shortestPath);
+    		}
     }
 
     /**
@@ -69,22 +74,7 @@ public class Router {
                                String simulatedIP, short weight) {
     	
     		addRouterToPorts(processIP, processPort, simulatedIP, weight);
-
-    		/*if (port != -1) {
-	        LinkDescription newLinkDescription = new LinkDescription(simulatedIP, port, weight);
-	        LSA routerLSA = lsd._store.get(this.rd.simulatedIPAddress);
-	        routerLSA.lsaSeqNumber++;
-	        routerLSA.links.add(newLinkDescription);
-    		}*/
     }
-
-	/*private void LDSysnchronization(int linkNumber, short weight){
-      LinkDescription establishedLinkDescription = new LinkDescription(this.rd.simulatedIPAddress, linkNumber, weight);
-      LSA newLSA = lsd._store.get(this.rd.simulatedIPAddress);
-      newLSA.lsaSeqNumber++;
-      newLSA.links.add(establishedLinkDescription);
-      this.lsd._store.put(newLSA.linkStateID, newLSA);
-	}*/
 
     /**
      * broadcast Hello to neighbors
@@ -108,32 +98,6 @@ public class Router {
             }
         }
     }
-
-    /*public void LSAUPDATE(String initializer) {
-        for (int i = 0; i < ports.length; i++) {
-            if (ports[i] != null) {
-                if (ports[i].router2.simulatedIPAddress != initializer) {
-                    SOSPFPacket newPacket = new SOSPFPacket();
-                    newPacket.srcProcessPort = this.rd.processPortNumber;
-                    newPacket.srcProcessIP = this.rd.processIPAddress;
-                    newPacket.srcIP = this.rd.simulatedIPAddress;
-                    newPacket.dstIP = ports[i].router2.simulatedIPAddress;
-                    newPacket.sospfType = 1;
-
-                    Vector<LSA> lsaVector = new Vector<LSA>();
-                    for (LSA lsa : lsd._store.values()) {
-                        lsaVector.add(lsa);
-                    }
-                    newPacket.lsaArray = lsaVector;
-
-                    String server = ports[i].router2.processIPAddress;
-                    int port = ports[i].router2.processPortNumber;
-                    //  new Thread(new Client(server, port, newPacket));
-                }
-            }
-        }
-    }*/
-
 
     /**
      * attach the link to the remote router, which is identified by the given simulated ip;
@@ -386,8 +350,8 @@ public class Router {
                     		}
                     }
                 } else if (inputMessage.sospfType == 1) {
-                		System.out.print("original lsd:\n");
-                		System.out.print(lsd.toString());
+                		//System.out.print("original lsd:\n");
+                		//System.out.print(lsd.toString());
                 	
                 		//received LSA update packet
                 		System.out.print("received LSAUPDATE from " + inputMessage.srcIP + ";\n");
@@ -398,15 +362,15 @@ public class Router {
                 			if (lsa == null || lsa.lsaSeqNumber < receivedLSA.lsaSeqNumber) {
             					//update database with newer LSA
             					lsd._store.put(receivedLSA.linkStateID, receivedLSA);
-            					lsd.constructGraph();
+            					//lsd.constructGraph();
             					
             					//update all neighbors except neighbor that sent the LSP
             					sendLSP(neighborPort);
             				}
                 		}
                 		
-                		System.out.print("new lsd:\n");
-                		System.out.print(lsd.toString());
+                		//System.out.print("new lsd:\n");
+                		//System.out.print(lsd.toString());
                 }
             } catch (IOException e) {
                 e.printStackTrace();
