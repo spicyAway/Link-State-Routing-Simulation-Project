@@ -4,9 +4,9 @@ import main.java.socs.network.message.LSA;
 import main.java.socs.network.message.LinkDescription;
 
 import java.util.HashMap;
-import java.util.LinkedList;
+//import java.util.LinkedList;
 import java.util.Map;
-import java.util.List;
+//import java.util.List;
 
 public class LinkStateDatabase {
 
@@ -26,44 +26,19 @@ public class LinkStateDatabase {
    * output the shortest path from this router to the destination with the given IP address
    */
   String getShortestPath(String destinationIP) {
-    //TODO: fill the implementation here
 	  constructGraph();
-	  //this.graph.printGraph();
 	  
       Node source = this.graph.findNode(this.rd.simulatedIPAddress);
       Node dest = this.graph.findNode(destinationIP);
+      
       if(source == null || dest == null){
-          System.out.print("Source node or Destination node is not inside the graph!");
+    	      return null;
+          //System.out.print("Source node or Destination node is not inside the graph!");
       }else{
           this.graph.calculateShortestPath(source);
           dest = this.graph.findNode(destinationIP);
-          //if (dest == null) {
-        	  	//System.out.println("dest is null?!?");
-          //}
-          //System.out.println(dest.getName());
-          //System.out.println(dest.toStringShortestPath());
-          List<Node> path = dest.getShortestPath();
-          List<Integer> pathWeights = dest.getShortestPathWeights();
-          //path.add(dest);
-          String shortestPath = pathToString(path, pathWeights, dest);
-          return shortestPath;
+          return dest.toStringShortestPath();
       }
-    return null;
-  }
-  
-  private String pathToString(List<Node> path, List<Integer> pathWeights, Node destNode){
-      String Path = "";
-      /*for(Node node : path){
-    	  	Path += node.getName() + " -> ";
-    	  	System.out.println(node.getName());
-      }*/
-      
-      for (int i = 0; i < path.size(); i++) {
-    	  	Path += path.get(i).getName() + " ->(" + pathWeights.get(i) + ") ";
-      }
-      
-      Path += destNode.getName();
-      return Path;
   }
 
   //initialize the linkstate database by adding an entry about the router itself
@@ -99,7 +74,6 @@ public class LinkStateDatabase {
    * the weight of the edge is the weight of the link
    */
   public void constructGraph(){
-
     Graph g = new Graph();
     for (Map.Entry<String, LSA> entry : this._store.entrySet()) {
 
@@ -111,7 +85,6 @@ public class LinkStateDatabase {
         		n = new Node(linkSID);
         		g.addNode(n);
         }
-        //Node n = new Node(linkSID);
 
         //add edges to node for each link
         for (int i = 0; i < lsa.links.size(); i++) {
@@ -124,20 +97,9 @@ public class LinkStateDatabase {
                 }
                 n.addAdjacent(neighbor, tempLink.tosMetrics);
             }
-            /*Node neighbor = g.findNode(tempLink.linkID);
-            if (neighbor == null) {
-            		neighbor = new Node(tempLink.linkID);
-            		g.addNode(neighbor);
-            }*/
-            //Node neighbor = new Node(tempLink.linkID);
-            /*if (neighbor.getName() != n.getName()) {
-                n.addAdjacent(neighbor, tempLink.tosMetrics);
-            }*/
         }
-        //g.addNode(n);
     }
     this.graph = g;
-    //this.graph.printGraph();
   }
 }
 

@@ -49,7 +49,7 @@ public class Router {
     		if (shortestPath == null) {
     			System.out.print("No path to " + destinationIP + ".\n");
     		} else {
-    			System.out.print(shortestPath);
+    			System.out.print(shortestPath + "\n");
     		}
     }
 
