@@ -19,6 +19,10 @@ public class Router {
 
     //assuming that all routers are with 4 ports
     Link[] ports = new Link[4];
+    
+    // START HEARTBEAT
+    long[] portsLastActive = new long[4];
+    // END HEARTBEAT
 
     public Router(Configuration config) {
     		rd = new RouterDescription(config.getString("socs.network.router.processIP"),
@@ -35,6 +39,14 @@ public class Router {
         } catch (IOException e) {
             System.out.print("Starting router server socket failed!");
         }
+        
+        // START HEARTBEAT
+        try {
+            new Thread(new Heartbeat()).start();
+        } catch (Exception e) {
+            System.out.print("Starting heartbeat failed!");
+        }
+        // END HEARTBEAT
     }
 
     /**
@@ -60,7 +72,8 @@ public class Router {
      * @param portNumber the port number which the link attaches at
      */
     private void processDisconnect(short portNumber) {
-
+    		//Link disconnectedLink = ports[portNumber];
+    		//ports[portNumber] = null;
     }
 
     /**
@@ -133,11 +146,11 @@ public class Router {
      * disconnect with all neighbors and quit the program
      */
     private void processQuit() {
-    		for (int i = 0; i < ports.length; i++) {
-            if (ports[i] != null) {
-            		processDisconnect((short) i);
-            }
-        }
+    		//for (int i = 0; i < ports.length; i++) {
+        //    if (ports[i] != null) {
+        //    		processDisconnect((short) i);
+        //    }
+        //}
     		System.exit(0);
     }
 
@@ -255,6 +268,7 @@ public class Router {
 	    		//attach router to the empty port
 	        	RouterDescription routerNeedToConnect = new RouterDescription(processIP, processPort, simulatedIP);
 	        ports[i] = new Link(this.rd, routerNeedToConnect, weight);
+	        portsLastActive[i] = System.currentTimeMillis();
 	        return i;
 	    }
 
@@ -371,7 +385,21 @@ public class Router {
                 		
                 		//System.out.print("new lsd:\n");
                 		//System.out.print(lsd.toString());
+                } 
+                
+                // START HEARTBEAT
+                else if (inputMessage.sospfType == 2) {
+                	
+                		//received heartbeat
+                		System.out.print("received heartbeat from " + inputMessage.srcIP + "\n");
+                		int srcPort = findRouterPort(inputMessage.srcIP);
+                		portsLastActive[srcPort] = System.currentTimeMillis();
+                		
                 }
+                
+                // END HEARTBEAT
+            } catch (ConnectException e) {
+        		System.out.print("connect exception");
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (ClassNotFoundException e) {
@@ -471,5 +499,56 @@ public class Router {
             }
         }
     }
+    
+    // START HEARTBEAT
+    class Heartbeat implements Runnable {
+
+        //private ServerSocket serverSocket;
+    		public static final int DELAY_TIME = 5000;
+    		public static final int EXPIRE_TIME = 10000;
+    		
+        //Router router;
+
+        public Heartbeat() {
+            //this.router = router;
+        }
+
+        public void run() {
+        		//heartbeat packet
+        		SOSPFPacket hb = new SOSPFPacket();
+        		hb.sospfType = 2;
+        		hb.srcProcessIP = rd.processIPAddress;
+        		hb.srcProcessPort = rd.processPortNumber;
+        		hb.srcIP = rd.simulatedIPAddress;
+        		
+        		while (true) {
+        			try {
+	        			for (int i = 0; i < ports.length; i++) {
+	        				if (ports[i] != null && ports[i].router2.status == RouterStatus.TWO_WAY) {
+	        					if (System.currentTimeMillis() - portsLastActive[i] > EXPIRE_TIME) {
+	        						// disconnect neighbor
+	        						System.out.print("" + ports[i].router2.simulatedIPAddress + " no longer active\n");
+	        						ports[i] = null;
+	        					} else {
+	        						// send heartbeat
+	        						String processIP = ports[i].router2.processIPAddress;
+	        						int processPort = (int) ports[i].router2.processPortNumber;
+	        						try {
+	        							new Thread(new Client(processIP, processPort, hb)).start();
+	        						} catch (Exception e) {
+	        							System.out.print("" + ports[i].router2.simulatedIPAddress + " no longer active\n");
+	        						}
+	        					}
+	        				}
+	        			}
+	        			
+	        			Thread.sleep(DELAY_TIME);
+        			} catch (Exception e) {
+        				System.out.println("problem with heartbeat");
+        			}
+        		}
+        }
+    }
+    // END HEARTBEAT
 
 }
